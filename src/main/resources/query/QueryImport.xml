@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<entity-mappings
+	xmlns="http://java.sun.com/xml/ns/persistence/orm"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_1_0.xsd"
+	version="1.0">
+	<package>fu.rms.entity</package>
+	<entity class="Import">
+		<named-native-query name="Import.findImportMaterialDetailByImportMaterialId">
+			<query><![CDATA[
+				SELECT
+				i.import_code AS importCode,
+			    date_format(i.created_date, '%d-%m-%Y %T') AS createdDate,
+			    s.name AS supplierName,
+			    w.name AS warehouseName,
+			    m.material_name AS materialName,
+			    m.unit AS unit,
+			    im.quantity_import AS quantity,
+			    im.unit_price AS unitPrice,
+			    im.quantity_import*im.unit_price AS totalAmount,
+			    date_format(im.expire_date, '%d-%m-%Y') AS expireDate
+			    	    
+				FROM import AS i
+				LEFT JOIN suppliers AS s ON i.supplier_id=s.supplier_id
+				INNER JOIN import_material AS im ON i.import_id = im.import_id
+				INNER JOIN materials AS m ON im.material_id= m.material_id
+				LEFT JOIN warehouses AS w ON im.warehouse_id = w.warehouse_id
+				WHERE im.import_material_id= :importMaterialId
+			]]></query>
+		</named-native-query>
+	</entity>
+</entity-mappings>
