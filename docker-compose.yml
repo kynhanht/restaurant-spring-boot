@@ -1,0 +1,82 @@
+version: "3"
+
+services:
+
+  # NGINX
+  nginx-server:
+    container_name: nginx-server
+    image: nginx:1.13
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d # map volume file config
+      - /home/stackops/certificate-ssl/:/etc/nginx/ssl/ # map volume for ssl(where ssl is stored)
+    networks:
+      - restaurant-network
+    depends_on:
+      - mysql-db
+      - spring-boot-jpa-app
+
+  # SPRING BOOT
+  spring-boot-jpa-app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: spring-boot-jpa-app
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes: 
+      - dir-site:/home/dir-site/
+    networks:
+      - restaurant-network
+    environment:
+      WAIT_HOSTS: mysql:3306
+      WAIT_HOSTS_TIMEOUT: 300
+      WAIT_SLEEP_INTERVAL: 30
+      WAIT_HOST_CONNECT_TIMEOUT: 30
+    depends_on:
+      - mysql-db
+    # logging:
+    #   driver: "json-file"
+    #   options:
+    #     max-size: "200k"
+    #     max-file: "10"
+    # location file log: /var/lib/docker/containers/container_id/container_id-json.log
+    
+
+  # MYSQL 
+  mysql-db:
+    image: mysql:8.0.13
+    container_name: mysql-db
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db:/var/lib/mysql
+    networks:
+      - restaurant-network
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: sa123456
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: test123
+      MYSQL_DATABASE: restaurant
+    cap_add:
+      - SYS_NICE # CAP_SYS_NICE
+
+# NETWORK
+networks:
+  restaurant-network:
+
+#VOLUMES
+volumes: 
+  dir-site:
+    driver_opts:
+      device: /home/stackops/restaurant-spring-boot/store/
+      type: none
+      o: bind
+  
